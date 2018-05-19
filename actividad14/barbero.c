@@ -1,32 +1,26 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<arpa/inet.h>
-#include<sys/socket.h>
+#include "base.h"
 
-#define APP_PORT 6235
-#define APP_HOST "127.0.0.1"
-#define APP_BUFFER 1024 // bytes
-
-#define BAR_SILLAS 3
-#define MENU "PRESIONA Q PARA SALIR\n"
-
-void die(char* msg){
+// definir el protocolo de msg
+// create a client
+// recibir a cliente 
+//
+void exit_msg(char* msg){
 
 	perror(msg);
 	exit(1);
 }
 
+void *wait_exit( void* ptr );
+
 int main(int* argc, char** argv){
 
 	printf("starting server el barbero \n");
-	
 
 	int res, sfd = -1;
 	sfd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (sfd <= -1 ){
-		die("error creating the socket");
+		exit_msg("error creating the socket");
 	}
 
 	struct sockaddr_in local;
@@ -40,7 +34,7 @@ int main(int* argc, char** argv){
 	res = bind(sfd, (struct sockaddr*) &local, sizeof(local));
 
 	if (sfd <= -1 ){
-		die("error binding the socket ");
+		exit_msg("error binding the socket ");
 	}
 
 	char buffer[APP_BUFFER];
@@ -48,12 +42,12 @@ int main(int* argc, char** argv){
 	printf("numero de sillas %i \n", BAR_SILLAS);
 	printf( "%s", MENU);
 
+	struct sockaddr* client = NULL;
+	socklen_t* client_t = NULL; 
 
+	recvfrom(sfd, buffer, APP_BUFFER, 0, client, client_t);
+	printf("%s", buffer);
 
-	while(1){
-
-
-	}
 
 	return 0;
 }
