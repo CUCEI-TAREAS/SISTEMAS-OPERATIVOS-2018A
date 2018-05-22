@@ -1,22 +1,14 @@
 #include "base.h"
 
-void exit_msg(char* msg){
-
-	perror(msg);
-	exit(1);
-}
-
-void *wait_exit( void* ptr );
-
 int main(int* argc, char** argv){
 
-	printf("starting server el barbero \n");
+	printf("connecting to el barbero \n");
 
 	int res, sfd = -1;
 
-	char buffer[APP_BUFFER];
+	char buffer[APP_BUFFER] = "testing" ;
 	memset(buffer, 0, APP_BUFFER);
-	memset(buffer, hola_server, 4);
+	memset(buffer, hola_server, 0);
 
 	sfd = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -25,7 +17,7 @@ int main(int* argc, char** argv){
 	}
 
 	struct sockaddr_in server;
-	
+
 	memset( (char*) &server, 0, sizeof(struct sockaddr));
 
 	server.sin_port = htons(APP_PORT);

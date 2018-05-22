@@ -1,53 +1,111 @@
+#include <pthread.h>
+#include <signal.h>
 #include "base.h"
 
-// definir el protocolo de msg
-// create a client
-// recibir a cliente 
-//
-void exit_msg(char* msg){
+// BARBERO GLOBAL VARIABLES // MUTEX
+enum barberoStatus { durmiendo, trabajando };
+int res, sfd = -1;
+char buffer[APP_BUFFER];
+pthread_t thread_receive, thread_scan;
+sem_t len;
 
-	perror(msg);
-	exit(1);
-}
+struct timespec ts;
+struct sigaction sa;
 
-void *wait_exit( void* ptr );
+char action[1];
+
+	struct sockaddr* client;
+	socklen_t* client_t;
+
+// BARBERO FUNCTIONS
+void *waitingClient( void* ptr );
+void *readingInput( void* ptr );
+void control();
 
 int main(int* argc, char** argv){
 
+	CLEAR_SCREEN;
 	printf("starting server el barbero \n");
 
-	int res, sfd = -1;
 	sfd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (sfd <= -1 ){
 		exit_msg("error creating the socket");
 	}
 
-	struct sockaddr_in local;
+	struct sockaddr_in addr;
 	
-	memset( (char*) &local, 0, sizeof(struct sockaddr));
+	memset( (char*) &addr, 0, sizeof(struct sockaddr_in));
 
-	local.sin_port = htons(APP_PORT);
-	local.sin_family = AF_INET;
-	local.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_port = htons(APP_PORT);
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	res = bind(sfd, (struct sockaddr*) &local, sizeof(local));
+	res = bind(sfd, (struct sockaddr*) &addr, sizeof(addr));
 
 	if (sfd <= -1 ){
 		exit_msg("error binding the socket ");
 	}
 
-	char buffer[APP_BUFFER];
-
 	printf("numero de sillas %i \n", BAR_SILLAS);
+
+	memset((char*) &client, 0, sizeof(struct sockaddr));
+	memset(&client_t, 0, sizeof(socklen_t));
+
 	printf( "%s", MENU);
+	sem_init(&len, 0, 0);
 
-	struct sockaddr* client = NULL;
-	socklen_t* client_t = NULL; 
+	sa.sa_handler = control;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
 
-	recvfrom(sfd, buffer, APP_BUFFER, 0, client, client_t);
-	printf("%s", buffer);
+	// waiting for clients
+	pthread_create(&thread_scan, NULL, readingInput, NULL); 
+	pthread_create(&thread_receive, NULL, waitingClient, NULL); 
 
-
+	pthread_join(thread_scan, NULL);
 	return 0;
+}
+
+void control(){
+	static int f;
+	printf("action %i", ++f);
+}
+
+// dormir
+// terminar
+// atender siguiente
+//  en  espera
+// sillas disponibles
+// rechazados 
+//
+
+void *waitingClient( void* ptr){
+	while(1){
+
+	alarm(1);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += 1;
+
+		sem_timedwait(&len, &ts);
+		int res_recv = recvfrom(sfd, buffer, APP_BUFFER, 0, client, client_t);
+
+		printf("%i", res_recv);
+		printf("%c", buffer);
+	
+	}
+}
+
+void *readingInput( void* ptr){
+
+		//CLEAR_SCREEN;
+
+	while(1){
+
+		scanf("%s", &action);
+		sem_post(&len);
+		if( strcmp (action, KEY_EXIT ) == 0 ){
+			exit(0);
+		}
+	}
 }
